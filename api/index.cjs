@@ -1,1 +1,4 @@
-module.exports = require('../server/dist/index.js');
+module.exports = async (req, res) => {
+  const { default: app } = await import('../server/dist/index.js');
+  app(req, res);
+};
