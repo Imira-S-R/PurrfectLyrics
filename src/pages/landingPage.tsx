@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import logo from '/logo_img.png'
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ export default function LandingPage() {
       }}
     >
       <nav className="flex items-center justify-center px-4 sm:px-8 py-4 border-b border-white/5">
+      <img src={logo} className="w-[50px]" />
         <span className="font-semibold text-xl sm:text-2xl tracking-tight">
           PurrfectLyrics
         </span>

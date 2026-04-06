@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Search, Music, User, SearchX, ListMusic, Plus, Minus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import logo from '/logo_img.png'
 
 interface SongResult {
   trackName: string;
@@ -212,12 +213,15 @@ export default function SearchPage() {
 
 
       <nav className="flex items-center justify-between px-4 sm:px-8 py-4 border-b border-white/5 max-w-[1100px] mx-auto w-full">
-        <span
-          className="font-semibold text-xl sm:text-2xl tracking-tight hover:cursor-pointer"
-          onClick={() => navigate('/')}
-        >
-          PurrfectLyrics
-        </span>
+        <div className="flex items-center gap-x-1">
+          <img src={logo} className="w-[50px]" />
+          <span
+            className="font-semibold text-xl sm:text-2xl tracking-tight hover:cursor-pointer"
+            onClick={() => navigate('/')}
+          >
+            PurrfectLyrics
+          </span>
+        </div>
 
         <button
           onClick={() => setIsModalOpen(true)}
