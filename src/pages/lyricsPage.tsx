@@ -1,4 +1,4 @@
-import { Pause, Play } from "lucide-react";
+import { Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import YouTube, { type YouTubeEvent } from "react-youtube";
@@ -13,6 +13,11 @@ interface SongInfo {
     trackName: string;
     artistName: string;
     duration?: number;
+}
+
+interface PlaylistSong {
+    trackName: string,
+    artistName: string
 }
 
 function parseLRC(raw: string): LyricLine[] {
@@ -80,8 +85,24 @@ export default function LyricsPage() {
     const [isPlaying, setIsPlaying] = useState(false);
     const navigate = useNavigate()
     const { lines, status, songInfo } = useLyrics(location.state.trackName, location.state.artistName);
+    const playlist: PlaylistSong[] = location.state.playlist;
     const activeIndex = useActiveIndex(lines, currentTime);
     const BASE_URL = import.meta.env.VITE_BASE_URL || "http://localhost:3000";
+    const [currentIndex, setCurrentIndex] = useState(0)
+
+
+
+    useEffect(() => {
+        playlist.map((song, index) => {
+            if (song.trackName === location.state.trackName) {
+                setCurrentIndex(index)
+            }
+        })
+        lineRefs.current[0]?.scrollIntoView({
+            block: "center",
+        });
+        setCurrentTime(0);
+    }, [songInfo.trackName, songInfo.artistName]);
 
     useEffect(() => {
         setPlayerReady(false);
@@ -118,6 +139,13 @@ export default function LyricsPage() {
 
     useEffect(() => {
         if (!songInfo.trackName || !songInfo.artistName || songInfo.duration == null) return;
+
+        playlist.map((song, index) => {
+            if (song.trackName === songInfo.trackName) {
+                setCurrentIndex(index)
+                console.log('current index', currentIndex)
+            }
+        })
 
         const fetchVideo = async () => {
             setLoadingVideo(true);
@@ -256,6 +284,15 @@ export default function LyricsPage() {
     const onEnd = () => {
         setIsPlaying(false);
         stopPolling();
+        if (currentIndex + 1 < playlist.length) {
+            navigate("/lyrics", {
+                state: {
+                    trackName: playlist[currentIndex + 1].trackName,
+                    artistName: playlist[currentIndex + 1].artistName,
+                    playlist,
+                },
+            });
+        }
     };
 
     const opts = {
@@ -274,7 +311,7 @@ export default function LyricsPage() {
         >
 
             <button
-                onClick={() => navigate(-1)}
+                onClick={() => navigate('/search')}
                 className={`
     absolute top-4 left-4 z-50
     flex items-center gap-2
@@ -417,23 +454,71 @@ export default function LyricsPage() {
                 )}
             </div>
 
-            <div className="flex items-center justify-center gap-4 mt-10 w-full max-w-md">
+            <div className="flex items-center justify-center gap-6 mt-10 w-full max-w-md flex-wrap sm:flex-nowrap">
+
+                <button
+                    disabled={playlist.length === 0 || currentIndex === 0}
+                    onClick={() => {
+                        if (currentIndex !== 0) {
+                            console.log('prev index', (currentIndex - 1))
+                            navigate("/lyrics", {
+                                state: {
+                                    trackName: playlist[currentIndex - 1].trackName,
+                                    artistName: playlist[currentIndex - 1].artistName,
+                                    playlist: playlist
+                                },
+                            })
+                        }
+                    }}
+                    className="
+  w-10 h-10 sm:w-12 sm:h-12
+  flex items-center justify-center
+  rounded-full
+  bg-white/10 text-white
+  hover:bg-white/20
+  active:scale-95
+  transition-all
+
+  disabled:opacity-30
+  disabled:cursor-not-allowed
+  disabled:hover:bg-white/10
+"
+                >
+                    <SkipBack size={20} />
+                </button>
+
                 <button
                     onClick={togglePlayback}
                     className="
-            w-14 h-14 sm:w-16 sm:h-16
-            flex items-center justify-center
-            rounded-full
-            bg-white text-black
-            shadow-xl
-            hover:scale-105 active:scale-95
-            transition-all
-          "
+      w-14 h-14 sm:w-16 sm:h-16
+      flex items-center justify-center
+      rounded-full
+      bg-white text-black
+      shadow-xl
+      hover:scale-105 active:scale-95
+      transition-all
+    "
                 >
                     {loadingVideo ? (
-                        <svg className="animate-spin h-6 w-6 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        <svg
+                            className="animate-spin h-6 w-6 text-black"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                        >
+                            <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                            />
+                            <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8v8H4z"
+                            />
                         </svg>
                     ) : isPlaying ? (
                         <Pause size={28} />
@@ -442,9 +527,45 @@ export default function LyricsPage() {
                     )}
                 </button>
 
-                <div className="flex flex-col">
-                    <p className="text-sm sm:text-base font-semibold">{songInfo.trackName}</p>
-                    <p className="text-xs text-white/70">{songInfo.artistName}</p>
+                <button
+                    disabled={playlist.length === 0 || (currentIndex + 1) === playlist.length}
+                    onClick={() => {
+                        console.log('next index', (currentIndex + 1))
+                        navigate("/lyrics", {
+                            state: {
+                                trackName: playlist[currentIndex + 1].trackName,
+                                artistName: playlist[currentIndex + 1].artistName,
+                                playlist: playlist
+                            },
+                        })
+                    }}
+                    className="
+  w-10 h-10 sm:w-12 sm:h-12
+  flex items-center justify-center
+  rounded-full
+  bg-white/10 text-white
+  hover:bg-white/20
+  active:scale-95
+  transition-all
+
+  disabled:opacity-30
+  disabled:cursor-not-allowed
+  disabled:hover:bg-white/10
+"
+                >
+                    <SkipForward size={20} />
+                </button>
+
+                {/* Song Info */}
+                <div className="flex flex-col ml-2 min-w-0">
+                    <p className="text-sm sm:text-base font-semibold truncate max-w-[160px] sm:max-w-[220px]">
+                        {songInfo.trackName.length > 50
+                            ? songInfo.trackName.slice(0, 40) + "..."
+                            : songInfo.trackName}
+                    </p>
+                    <p className="text-xs text-white/70 truncate">
+                        {songInfo.artistName}
+                    </p>
                 </div>
             </div>
         </div>
