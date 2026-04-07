@@ -1,76 +1,13 @@
-import { Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import YouTube, { type YouTubeEvent } from "react-youtube";
 import { ArrowLeft } from "lucide-react";
-
-interface LyricLine {
-    time: number;
-    text: string;
-}
-
-interface SongInfo {
-    trackName: string;
-    artistName: string;
-    duration?: number;
-}
-
-interface PlaylistSong {
-    trackName: string,
-    artistName: string
-}
-
-function parseLRC(raw: string): LyricLine[] {
-    const regex = /\[(\d{2}):(\d{2}\.\d+)\](.*)/;
-    return raw
-        .split("\n")
-        .map((line) => {
-            const m = line.match(regex);
-            if (!m) return null;
-            const time = parseInt(m[1]) * 60 + parseFloat(m[2]);
-            return { time, text: m[3].trim() };
-        })
-        .filter((l): l is LyricLine => l !== null && l.text.length > 0);
-}
-
-function useLyrics(track: string, artist: string) {
-    const [lines, setLines] = useState<LyricLine[]>([]);
-    const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
-    const [songInfo, setSongInfo] = useState<SongInfo>({ trackName: "", artistName: "" });
-
-    useEffect(() => {
-        setStatus("loading");
-        const url = `https://lrclib.net/api/search?q=${encodeURIComponent(`${track} ${artist}`)}`;
-        fetch(url)
-            .then((r) => r.json())
-            .then((data) => {
-                const match = data?.find((item: any) => item.syncedLyrics) ?? data?.[0];
-                if (match?.syncedLyrics) {
-                    setSongInfo({
-                        trackName: match.trackName,
-                        artistName: match.artistName,
-                        duration: match.duration,
-                    });
-                    setLines(parseLRC(match.syncedLyrics));
-                    setStatus("done");
-                } else {
-                    setStatus("error");
-                }
-            })
-            .catch(() => setStatus("error"));
-    }, [track, artist]);
-
-    return { lines, status, songInfo };
-}
-
-function useActiveIndex(lines: LyricLine[], currentTime: number): number {
-    let idx = -1;
-    for (let i = 0; i < lines.length; i++) {
-        if (currentTime >= lines[i].time) idx = i;
-        else break;
-    }
-    return idx;
-}
+import useLyrics from "../hooks/useLyrics";
+import type { PlaylistSong } from "../types";
+import { useActiveIndex } from "../hooks/useActiveIndex";
+import Lyrics from "../components/lyrics";
+import PlayerControls from "../components/playerControls";
+import { findCurrentIndex } from "../utils";
 
 export default function LyricsPage() {
     const [videoId, setVideoId] = useState<string>("");
@@ -90,14 +27,9 @@ export default function LyricsPage() {
     const BASE_URL = import.meta.env.VITE_BASE_URL || "http://localhost:3000";
     const [currentIndex, setCurrentIndex] = useState(0)
 
-
-
     useEffect(() => {
-        playlist.map((song, index) => {
-            if (song.trackName === location.state.trackName) {
-                setCurrentIndex(index)
-            }
-        })
+        setCurrentIndex(findCurrentIndex(location.state.trackName, playlist))
+
         lineRefs.current[0]?.scrollIntoView({
             block: "center",
         });
@@ -140,12 +72,7 @@ export default function LyricsPage() {
     useEffect(() => {
         if (!songInfo.trackName || !songInfo.artistName || songInfo.duration == null) return;
 
-        playlist.map((song, index) => {
-            if (song.trackName === songInfo.trackName) {
-                setCurrentIndex(index)
-                console.log('current index', currentIndex)
-            }
-        })
+        setCurrentIndex(findCurrentIndex(songInfo.trackName, playlist))
 
         const fetchVideo = async () => {
             setLoadingVideo(true);
@@ -410,164 +337,20 @@ export default function LyricsPage() {
                 )}
 
                 {status === "done" && (
-                    <div
-                        className="
-              w-full
-              h-[60vh] sm:h-[65vh] md:h-[70vh]
-              overflow-y-auto
-              flex flex-col items-center
-              space-y-1
-              pt-8
-              pb-[25vh]
-              [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
-              [mask-image:linear-gradient(to_bottom,transparent,black_10%,black_90%,transparent)]
-              [-webkit-mask-image:linear-gradient(to_bottom,transparent,black_10%,black_90%,transparent)]
-            "
-                    >
-                        {lines.map((line, i) => {
-                            const isActive = i === activeIndex;
-                            const isPast = i < activeIndex;
-                            return (
-                                <div
-                                    key={i}
-                                    ref={(el) => { lineRefs.current[i] = el; }}
-                                    onClick={() => {
-                                        playerRef.current?.seekTo(line.time, true);
-                                        setCurrentTime(line.time);
-                                    }}
-                                    className={`
-                    w-full text-left px-4 py-2 rounded-lg cursor-pointer
-                    transition-all duration-200
-                    ${isActive
-                                            ? "text-white font-semibold text-2xl sm:text-3xl md:text-3xl"
-                                            : isPast
-                                                ? "text-white/40 text-xl"
-                                                : "text-white/60 text-xl"
-                                        }
-                  `}
-                                >
-                                    {line.text}
-                                </div>
-                            );
-                        })}
-                    </div>
+                    <Lyrics lines={lines} activeIndex={activeIndex} lineRefs={lineRefs} playerRef={playerRef} setCurrentTime={setCurrentTime} />
                 )}
             </div>
 
-            <div className="flex items-center justify-center gap-6 mt-10 w-full max-w-md flex-wrap sm:flex-nowrap">
+            <PlayerControls
+                playlist={playlist}
+                currentIndex={currentIndex}
+                navigate={navigate}
+                togglePlayback={togglePlayback}
+                loadingVideo={loadingVideo}
+                isPlaying={isPlaying}
+                songInfo={songInfo}
+            />
 
-                <button
-                    disabled={playlist.length === 0 || currentIndex === 0}
-                    onClick={() => {
-                        if (currentIndex !== 0) {
-                            console.log('prev index', (currentIndex - 1))
-                            navigate("/lyrics", {
-                                state: {
-                                    trackName: playlist[currentIndex - 1].trackName,
-                                    artistName: playlist[currentIndex - 1].artistName,
-                                    playlist: playlist
-                                },
-                            })
-                        }
-                    }}
-                    className="
-  w-10 h-10 sm:w-12 sm:h-12
-  flex items-center justify-center
-  rounded-full
-  bg-white/10 text-white
-  hover:bg-white/20
-  active:scale-95
-  transition-all
-
-  disabled:opacity-30
-  disabled:cursor-not-allowed
-  disabled:hover:bg-white/10
-"
-                >
-                    <SkipBack size={20} />
-                </button>
-
-                <button
-                    onClick={togglePlayback}
-                    className="
-      w-14 h-14 sm:w-16 sm:h-16
-      flex items-center justify-center
-      rounded-full
-      bg-white text-black
-      shadow-xl
-      hover:scale-105 active:scale-95
-      transition-all
-    "
-                >
-                    {loadingVideo ? (
-                        <svg
-                            className="animate-spin h-6 w-6 text-black"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                        >
-                            <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                            />
-                            <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8v8H4z"
-                            />
-                        </svg>
-                    ) : isPlaying ? (
-                        <Pause size={28} />
-                    ) : (
-                        <Play size={28} />
-                    )}
-                </button>
-
-                <button
-                    disabled={playlist.length === 0 || (currentIndex + 1) === playlist.length}
-                    onClick={() => {
-                        console.log('next index', (currentIndex + 1))
-                        navigate("/lyrics", {
-                            state: {
-                                trackName: playlist[currentIndex + 1].trackName,
-                                artistName: playlist[currentIndex + 1].artistName,
-                                playlist: playlist
-                            },
-                        })
-                    }}
-                    className="
-  w-10 h-10 sm:w-12 sm:h-12
-  flex items-center justify-center
-  rounded-full
-  bg-white/10 text-white
-  hover:bg-white/20
-  active:scale-95
-  transition-all
-
-  disabled:opacity-30
-  disabled:cursor-not-allowed
-  disabled:hover:bg-white/10
-"
-                >
-                    <SkipForward size={20} />
-                </button>
-
-                {/* Song Info */}
-                <div className="flex flex-col ml-2 min-w-0">
-                    <p className="text-sm sm:text-base font-semibold truncate max-w-[160px] sm:max-w-[220px]">
-                        {songInfo.trackName.length > 50
-                            ? songInfo.trackName.slice(0, 40) + "..."
-                            : songInfo.trackName}
-                    </p>
-                    <p className="text-xs text-white/70 truncate">
-                        {songInfo.artistName}
-                    </p>
-                </div>
-            </div>
         </div>
     );
 }
