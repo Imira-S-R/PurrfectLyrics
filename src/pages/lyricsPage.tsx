@@ -8,11 +8,10 @@ import { useActiveIndex } from "../hooks/useActiveIndex";
 import Lyrics from "../components/lyrics";
 import PlayerControls from "../components/playerControls";
 import { findCurrentIndex } from "../utils";
+import { useVideoSearch } from "../hooks/useVideoSearch";
 
 export default function LyricsPage() {
-    const [videoId, setVideoId] = useState<string>("");
     const [playerReady, setPlayerReady] = useState(false);
-    const [loadingVideo, setLoadingVideo] = useState(false);
     const location = useLocation()
     const playerRef = useRef<any>(null);
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -24,8 +23,8 @@ export default function LyricsPage() {
     const { lines, status, songInfo } = useLyrics(location.state.trackName, location.state.artistName);
     const playlist: PlaylistSong[] = location.state.playlist;
     const activeIndex = useActiveIndex(lines, currentTime);
-    const BASE_URL = import.meta.env.VITE_BASE_URL || "http://localhost:3000";
     const [currentIndex, setCurrentIndex] = useState(0)
+    const { videoId, loadingVideo } = useVideoSearch(songInfo)
 
     useEffect(() => {
         setCurrentIndex(findCurrentIndex(location.state.trackName, playlist))
@@ -68,76 +67,6 @@ export default function LyricsPage() {
             clearTimeout(timeout);
         };
     }, []);
-
-    useEffect(() => {
-        if (!songInfo.trackName || !songInfo.artistName || songInfo.duration == null) return;
-
-        setCurrentIndex(findCurrentIndex(songInfo.trackName, playlist))
-
-        const fetchVideo = async () => {
-            setLoadingVideo(true);
-            try {
-                const query = `${songInfo.trackName} ${songInfo.artistName} official audio`;
-
-                console.log("Searching for:", query);
-                console.log("Expected duration (seconds):", songInfo.duration);
-
-                const res = await fetch(`${BASE_URL}/api/search`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ query }),
-                });
-
-                const data = await res.json();
-                const items = data.results ?? [];
-                console.log("Results:", items);
-
-                const songDuration = songInfo.duration!;
-                let bestVid = "";
-                let bestDiff = Infinity;
-
-                for (const item of items) {
-                    const parts = item.duration.split(":").map(Number);
-
-                    if (!item.id || !parts.length || parts.some(isNaN)) {
-                        console.warn("Skipping item:", item);
-                        continue;
-                    }
-
-                    const totalSeconds =
-                        parts.length === 3
-                            ? parts[0] * 3600 + parts[1] * 60 + parts[2]
-                            : parts[0] * 60 + parts[1];
-
-                    const diff = Math.abs(totalSeconds - songDuration);
-
-                    console.log(
-                        `"${item.title}" | duration: ${item.duration} (${totalSeconds}s) | expected: ${songDuration}s | diff: ${diff}s`
-                    );
-
-                    if (diff < bestDiff && diff <= 5) {
-                        bestDiff = diff;
-                        bestVid = item.id;
-                        console.log(`New best match: ${item.id} with diff ${diff}s`);
-                    }
-                }
-
-                if (bestVid) {
-                    console.log("Selected videoId:", bestVid, "with diff:", bestDiff);
-                    setVideoId(bestVid);
-                } else {
-                    console.warn("No video found within ±5s of duration:", songDuration);
-                }
-            } catch (err) {
-                console.error("Local search fetch failed", err);
-            } finally {
-                setTimeout(() => setLoadingVideo(false), 3000);
-            }
-        };
-
-        fetchVideo();
-    }, [songInfo]);
-
 
     const startPolling = useCallback(() => {
         if (intervalRef.current) clearInterval(intervalRef.current);

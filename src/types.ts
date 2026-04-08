@@ -13,3 +13,10 @@ export interface SongInfo {
     artistName: string;
     duration?: number;
 }
+
+export interface SongResult {
+  trackName: string;
+  artistName: string;
+  duration?: number;
+  syncedLyrics?: string;
+}
