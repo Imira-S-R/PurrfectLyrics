@@ -42,8 +42,8 @@ export default function Lyrics({ lines, activeIndex, lineRefs, playerRef, setCur
                     ${isActive
                                 ? "text-white font-semibold text-2xl sm:text-3xl md:text-3xl"
                                 : isPast
-                                    ? "text-white/40 text-xl"
-                                    : "text-white/60 text-xl"
+                                    ? "text-white/40 text-xl hover:text-white/80"
+                                    : "text-white/60 text-xl hover:text-white/90"
                             }
                   `}
                     >

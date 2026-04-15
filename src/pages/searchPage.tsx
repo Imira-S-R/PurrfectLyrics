@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Music, User, SearchX, ListMusic } from "lucide-react";
+import { Search, Music, User, SearchX, ListMusic, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import logo from '/logo_img.png'
 import PlaylistModal from "../components/playlistModal";
@@ -18,8 +18,11 @@ export default function SearchPage() {
     return stored ? JSON.parse(stored) : [];
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchedMusic, setSearchedMusic] = useState(false);
+
 
   const handleSearch = async () => {
+    setSearchedMusic(true);
     if (!track.trim() && !artist.trim()) return;
     setLoading(true);
     setSearched(true);
@@ -175,6 +178,208 @@ export default function SearchPage() {
               ))}
             </div>
           )}
+
+          {!searchedMusic && (
+            <div className="">
+
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <div className="h-px w-10 bg-white/10" />
+                <h1 className="text-sm sm:text-base font-medium tracking-wide text-white/70">
+                  Try It Out
+                </h1>
+                <div className="h-px w-10 bg-white/10" />
+              </div>
+
+              <div
+                className="
+        flex items-center justify-between
+        px-4 sm:px-5 py-3.5
+        rounded-xl
+        bg-white/5
+        border border-white/10
+        hover:bg-white/10
+        hover:border-white/20
+        transition-all
+        shadow-md shadow-black/20
+        mb-4
+      "
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-sm sm:text-[15px] truncate text-white">
+                    Manchild
+                  </p>
+                  <p className="text-xs sm:text-[13px] text-white/50 mt-0.5">
+                    Sabrina Carpenter
+                  </p>
+                </div>
+
+                <div className="flex flex-row">
+
+                  <button
+                    onClick={() =>
+                      navigate("/lyrics", {
+                        state: {
+                          trackName: "manchild",
+                          artistName: "sabrina carpenter",
+                          playlist: []
+                        },
+                      })
+                    }
+                    className="
+                      ml-3
+                      w-9 h-9
+                      rounded-full
+                      bg-white/10
+                      flex items-center justify-center
+                      hover:bg-white/20
+                      active:scale-95
+                      transition-all
+                      disabled:opacity-20
+                      disabled:cursor-not-allowed
+                      shrink-0
+                    "
+                  >
+                    <svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <polygon points="5,3 19,12 5,21" />
+                    </svg>
+                  </button>
+
+                </div>
+              </div>
+
+
+              <div
+                className="
+        flex items-center justify-between
+        px-4 sm:px-5 py-3.5
+        rounded-xl
+        bg-white/5
+        border border-white/10
+        hover:bg-white/10
+        hover:border-white/20
+        transition-all
+        shadow-md shadow-black/20
+        mb-4
+      "
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-sm sm:text-[15px] truncate text-white">
+                    Flowers
+                  </p>
+                  <p className="text-xs sm:text-[13px] text-white/50 mt-0.5">
+                    Miley Cyrus
+                  </p>
+                </div>
+
+                <div className="flex flex-row">
+
+                  <button
+                    onClick={() =>
+                      navigate("/lyrics", {
+                        state: {
+                          trackName: "flowers)",
+                          artistName: "miley cyrus",
+                          playlist: []
+                        },
+                      })
+                    }
+                    className="
+                      ml-3
+                      w-9 h-9
+                      rounded-full
+                      bg-white/10
+                      flex items-center justify-center
+                      hover:bg-white/20
+                      active:scale-95
+                      transition-all
+                      disabled:opacity-20
+                      disabled:cursor-not-allowed
+                      shrink-0
+                    "
+                  >
+                    <svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <polygon points="5,3 19,12 5,21" />
+                    </svg>
+                  </button>
+
+                </div>
+              </div>
+
+
+              <div
+                className="
+        flex items-center justify-between
+        px-4 sm:px-5 py-3.5
+        rounded-xl
+        bg-white/5
+        border border-white/10
+        hover:bg-white/10
+        hover:border-white/20
+        transition-all
+        shadow-md shadow-black/20
+      "
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-sm sm:text-[15px] truncate text-white">
+                    Reckless
+                  </p>
+                  <p className="text-xs sm:text-[13px] text-white/50 mt-0.5">
+                    Madison Beer
+                  </p>
+                </div>
+
+                <div className="flex flex-row">
+
+                  <button
+                    onClick={() =>
+                      navigate("/lyrics", {
+                        state: {
+                          trackName: "reckless",
+                          artistName: "madison beer",
+                          playlist: []
+                        },
+                      })
+                    }
+                    className="
+                      ml-3
+                      w-9 h-9
+                      rounded-full
+                      bg-white/10
+                      flex items-center justify-center
+                      hover:bg-white/20
+                      active:scale-95
+                      transition-all
+                      disabled:opacity-20
+                      disabled:cursor-not-allowed
+                      shrink-0
+                    "
+                  >
+                    <svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <polygon points="5,3 19,12 5,21" />
+                    </svg>
+                  </button>
+
+                </div>
+              </div>
+
+            </div>
+          )}
+
         </div>
       </main>
 
