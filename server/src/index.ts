@@ -24,6 +24,8 @@ app.post('/api/search', async (req: Request<{}, {}, SearchBody>, res: Response) 
       return;
     }
 
+    console.log("QUERY: ", query);
+
     const youtube = await Innertube.create();
 
     const results = await youtube.search(query);
