@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Music, User, SearchX, ListMusic, Plus } from "lucide-react";
+import { Search, Music, User, SearchX, ListMusic } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import logo from '/logo_img.png'
 import PlaylistModal from "../components/playlistModal";

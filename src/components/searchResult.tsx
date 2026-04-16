@@ -1,5 +1,6 @@
-import { Plus } from "lucide-react"
+import { Check, Plus } from "lucide-react"
 import type { PlaylistSong, SongResult } from "../types"
+import { formatTime } from "../utils";
 
 type SearchResultProps = {
     song: SongResult;
@@ -14,6 +15,17 @@ export default function SearchResult({
     setPlaylist,
     navigate,
 }: SearchResultProps) {
+
+    function isSongFound() {
+        for (const _song of playlist) {
+            if (_song.trackName === song.trackName && _song.artistName === song.artistName) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
     return (
         <div
             className="
@@ -30,8 +42,13 @@ export default function SearchResult({
                 <p className="font-medium text-sm sm:text-[15px] truncate">
                     {song.trackName}
                 </p>
-                <p className="text-xs sm:text-[13px] text-white/50 mt-0.5">
-                    {song.artistName}
+
+                <p className="text-xs sm:text-[13px] text-white/50 mt-0.5 flex items-center gap-2">
+                    <span className="truncate">{song.artistName}</span>
+                    <span className="opacity-40">•</span>
+                    <span className="tabular-nums">
+                        {formatTime(Number(song.duration))}
+                    </span>
                 </p>
 
                 {!song.syncedLyrics && (
@@ -44,14 +61,7 @@ export default function SearchResult({
             <div className="flex flex-row">
                 <button
                     onClick={() => {
-                        let songAlreadyFound = false
-                        for (const _song of playlist) {
-                            if (_song.trackName === song.trackName && _song.artistName === song.artistName) {
-                                songAlreadyFound = true
-                            }
-                        }
-
-                        if (!songAlreadyFound) {
+                        if (!isSongFound()) {
                             localStorage.setItem('playlist', JSON.stringify([...playlist, { trackName: song.trackName, artistName: song.artistName }]))
                             setPlaylist((prev) => [...prev, { trackName: song.trackName, artistName: song.artistName }])
                         }
@@ -71,7 +81,7 @@ export default function SearchResult({
                       shrink-0
                     "
                 >
-                    <Plus size={15} />
+                    {isSongFound() ? <Check size={15} /> : <Plus size={15} />}
                 </button>
 
                 <button

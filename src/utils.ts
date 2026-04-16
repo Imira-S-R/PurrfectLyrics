@@ -17,3 +17,11 @@ export function parseLRC(raw: string): LyricLine[] {
         .filter((l): l is LyricLine => l !== null && l.text.length > 0);
 }
 
+export function formatTime(seconds: number) {
+    const totalSeconds = Math.round(seconds); // fix floating issue
+    const minutes = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+}
+
